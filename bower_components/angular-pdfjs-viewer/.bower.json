@@ -1,0 +1,36 @@
+{
+  "name": "angular-pdfjs-viewer",
+  "description": "Embed PDF.js viewer into your angular application",
+  "homepage": "http://github.com/legalthings/angular-pdfjs-viewer",
+  "license": "MIT",
+  "authors": [
+    "LegalThings <info@legalthings.net>",
+    "Moesjarraf <moesjarraf@gmail.com>",
+    "Arnold Daniels <arnold@jasny.net>"
+  ],
+  "main": "dist/angular-pdfjs-viewer.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hermeslm/pdf.js-viewer.git"
+  },
+  "dependencies": {
+    "angular": "^1.5.8",
+    "pdf.js-viewer": "https://github.com/hermeslm/pdf.js-viewer.git#master"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "spec",
+    "**/*.spec.js"
+  ],
+  "_release": "111a388583",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "111a388583e6247a263ca7b7273844432bc6aaad"
+  },
+  "_source": "https://github.com/hermeslm/angular-pdfjs-viewer.git",
+  "_target": "master",
+  "_originalSource": "https://github.com/hermeslm/angular-pdfjs-viewer.git"
+}

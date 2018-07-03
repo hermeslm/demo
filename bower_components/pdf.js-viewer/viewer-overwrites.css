@@ -1,0 +1,33 @@
+
+#fileInput.fileInput {display: none;}
+
+html {
+
+    font-size: 10px
+}
+
+body {
+
+    background-image: none;
+}
+
+.pdfjs #viewerContainer {
+
+    background: #404040 url(images/texture.png);
+    height: 90vh;
+}
+
+.pdfjs .toolbar {
+
+    z-index: 100;
+}
+
+.pdfjs .pdfViewer .page {
+
+    margin: 1px auto 10px auto;
+}
+
+.pdfjs #sidebarContent {
+
+    height: 90vh;
+}
