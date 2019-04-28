@@ -70,7 +70,8 @@
             <label class="col-sm-2 control-label">Both</label>
             <div class="col-sm-10">
                 <p class="input-group">
-                    <input type="text" class="form-control" datetime-picker="MM/dd/yyyy HH:mm" ng-model="ctrl.picker3.date" is-open="ctrl.picker3.open" />
+                    <input name="testing" type="text" class="form-control" datetime-picker="MM/dd/yyyy HH:mm" ng-model="ctrl.picker3.date" is-open="ctrl.picker3.open"
+                    ng-required="required"/>
               <span class="input-group-btn">
                   <button type="button" class="btn btn-default" ng-click="ctrl.openCalendar($event, 'picker3')"><i class="fa fa-calendar"></i></button>
               </span>
@@ -83,6 +84,7 @@
                 <p class="form-control-static">{{ ctrl.picker3.date }}</p>
             </div>
         </div>
+        <p>{{form-horizontal.testing.$error}}</p>
     </form>
     <hr />
     <h3>Pick two dates to calculate difference</h3>
