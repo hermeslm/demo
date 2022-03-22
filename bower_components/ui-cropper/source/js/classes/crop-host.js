@@ -3,7 +3,7 @@
 angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare', 'cropAreaRectangle', 'cropEXIF', function ($document, $q, CropAreaCircle, CropAreaSquare, CropAreaRectangle, cropEXIF) {
     /* STATIC FUNCTIONS */
     var colorPaletteLength = 8;
-    
+
     // Get Element's Offset
     var getElementOffset = function (elem) {
         var box = elem.getBoundingClientRect();
@@ -57,15 +57,16 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
             // Result Image quality
             resImgQuality = null,
 
+            keys = {
+                up: 38,
+                down: 40,
+                left: 37,
+                right: 39
+            },
+
             forceAspectRatio = false;
 
         /* PRIVATE FUNCTIONS */
-        this.setInitMax = function (bool) {
-            initMax = bool;
-        };
-        this.setAllowCropResizeOnCorners = function (bool) {
-            theArea.setAllowCropResizeOnCorners(bool);
-        };
         // Draw Scene
         function drawScene() {
             // clear canvas
@@ -78,37 +79,94 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
                 ctx.save();
 
                 // and make it darker
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                if(!theArea._disableCrop){
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-                ctx.restore();
-
+                    ctx.restore();
+                }
                 // draw Area
                 theArea.draw();
             }
         }
 
+        this.setInitMax = function (bool) {
+            initMax = bool;
+        };
+
+        this.setAllowCropResizeOnCorners = function (bool) {
+            theArea.setAllowCropResizeOnCorners(bool);
+        };
+
+        this.setDisableCrop = function(value){
+            theArea.setDisableCrop(value);
+            drawScene();
+        };
+
+        
+
+        var focusOnCanvas = function () {
+            elCanvas[0].focus();
+        };
+
+        function fitCanvasDims(width, height) {
+            var imageRatio = width / height;
+            var canvasDims = [width, height];
+            var margins = {left: 0, top: 0};
+            if (canvasDims[0] > maxCanvasDims[0]) {
+                canvasDims[0] = maxCanvasDims[0];
+                canvasDims[1] = canvasDims[0] / imageRatio;
+                margins.top = (maxCanvasDims[1] - canvasDims[1]) / 2;
+            }
+            else if (canvasDims[1] > maxCanvasDims[1]) {
+                canvasDims[1] = maxCanvasDims[1];
+                canvasDims[0] = canvasDims[1] * imageRatio;
+                margins.left = (maxCanvasDims[0] - canvasDims[0]) / 2;
+            }
+            else {
+                margins.top = (maxCanvasDims[1] - canvasDims[1]) / 2;
+                margins.left = (maxCanvasDims[0] - canvasDims[0]) / 2;
+            }
+            return {
+                dims: canvasDims,
+                margins: margins,
+            };
+        }
+
         // Resets CropHost
         var resetCropHost = function () {
+            var canvasDims = [0, 0];
             if (image !== null) {
+                focusOnCanvas();
                 theArea.setImage(image);
-                var imageDims = [image.width, image.height],
-                    imageRatio = image.width / image.height,
+                if (scalemode === 'fit') {
+                    var results = fitCanvasDims(image.width, image.height);
+                    canvasDims = results.dims;
+                    var margins = results.margins;
+                    elCanvas.css({
+                        'margin-left': margins.left + 'px',
+                        'margin-top': margins.top + 'px'
+                    });
+                }
+                else {
+                    var imageDims = [image.width, image.height],
+                        imageRatio = image.width / image.height;
                     canvasDims = imageDims;
 
-                if (canvasDims[0] > maxCanvasDims[0]) {
-                    canvasDims[0] = maxCanvasDims[0];
-                    canvasDims[1] = canvasDims[0] / imageRatio;
-                } else if (canvasDims[0] < minCanvasDims[0]) {
-                    canvasDims[0] = minCanvasDims[0];
-                    canvasDims[1] = canvasDims[0] / imageRatio;
-                }
-                if (scalemode === 'fixed-height' && canvasDims[1] > maxCanvasDims[1]) {
-                    canvasDims[1] = maxCanvasDims[1];
-                    canvasDims[0] = canvasDims[1] * imageRatio;
-                } else if (canvasDims[1] < minCanvasDims[1]) {
-                    canvasDims[1] = minCanvasDims[1];
-                    canvasDims[0] = canvasDims[1] * imageRatio;
+                    if (canvasDims[0] > maxCanvasDims[0]) {
+                        canvasDims[0] = maxCanvasDims[0];
+                        canvasDims[1] = canvasDims[0] / imageRatio;
+                    } else if (canvasDims[0] < minCanvasDims[0]) {
+                        canvasDims[0] = minCanvasDims[0];
+                        canvasDims[1] = canvasDims[0] / imageRatio;
+                    }
+                    if (scalemode === 'fixed-height' && canvasDims[1] > maxCanvasDims[1]) {
+                        canvasDims[1] = maxCanvasDims[1];
+                        canvasDims[0] = canvasDims[1] * imageRatio;
+                    } else if (canvasDims[1] < minCanvasDims[1]) {
+                        canvasDims[1] = minCanvasDims[1];
+                        canvasDims[0] = canvasDims[1] * imageRatio;
+                    }
                 }
                 elCanvas.prop('width', canvasDims[0]).prop('height', canvasDims[1]);
                 if (scalemode === 'fixed-height') {
@@ -196,6 +254,10 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
         };
 
         var onMouseMove = function (e) {
+            if(theArea._disableCrop) {
+                return;
+            }
+
             if (image !== null) {
                 var offset = getElementOffset(ctx.canvas),
                     pageX, pageY;
@@ -206,6 +268,7 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
                     pageX = e.pageX;
                     pageY = e.pageY;
                 }
+
                 theArea.processMouseMove(pageX - offset.left, pageY - offset.top);
                 drawScene();
             }
@@ -213,8 +276,16 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
 
         var onMouseDown = function (e) {
             e.preventDefault();
-            e.stopPropagation();
+            if(theArea._disableCrop) {
+                return;
+            }
+
+            if (!opts.allowPropagation) {
+                e.stopPropagation();
+            }
+
             if (image !== null) {
+                focusOnCanvas();
                 var offset = getElementOffset(ctx.canvas),
                     pageX, pageY;
                 if (e.type === 'touchstart') {
@@ -230,6 +301,10 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
         };
 
         var onMouseUp = function (e) {
+            if(theArea._disableCrop) {
+                return;
+            }
+
             if (image !== null) {
                 var offset = getElementOffset(ctx.canvas),
                     pageX, pageY;
@@ -242,6 +317,94 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
                 }
                 theArea.processMouseUp(pageX - offset.left, pageY - offset.top);
                 drawScene();
+            }
+        };
+
+        var getDirectionByKey = function (key) {
+            return Object.keys(keys).reduce(function(result, direction) {
+                return key === keys[direction] ? direction : result;
+            }, null);
+        };
+
+        var resizeCropAreaByDirection = function (direction) {
+            if(theArea._disableCrop) {
+                return;
+            }
+
+            var scale;
+            switch (direction) {
+                case 'up':
+                case 'left':
+                    scale = 0.95;
+                    break;
+                case 'down':
+                case 'right':
+                    scale = 1.05;
+                    break;
+                default:
+                    return;
+            }
+            theArea.setSizeByScale(scale, direction);
+            drawScene();
+        };
+
+        var moveCropArea = function (direction) {
+            if(theArea._disableCrop) {
+                return;
+            }
+
+            var center = theArea.getCenterPoint();
+            var step = 5;
+            var point = {
+                x: center.x,
+                y: center.y
+            };
+
+            switch (direction) {
+                case 'up':
+                    point.y -= step;
+                    break;
+                case 'down':
+                    point.y += step;
+                    break;
+                case 'left':
+                    point.x -= step;
+                    break;
+                case 'right':
+                    point.x += step;
+                    break;
+                default:
+                    return;
+            }
+
+            theArea.setCenterPointOnMove(point);
+            drawScene();
+        };
+
+        var onKeyDown = function (e) {
+            if(theArea._disableCrop) {
+                return;
+            }
+            
+            if (image !== null && opts.disableKeyboardAccess !== true) {
+                var key = e.which;
+                switch (key) {
+                    case keys.up:
+                    case keys.down:
+                    case keys.left:
+                    case keys.right:
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var direction = getDirectionByKey(key);
+                        if (e.shiftKey) {
+                            resizeCropAreaByDirection(direction);
+                        } else {
+                            moveCropArea(direction);
+                        }
+                        break;
+                    default:
+                        return;
+                }
             }
         };
 
@@ -462,24 +625,35 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
             if (image !== null) {
                 var curWidth = ctx.canvas.width,
                     curHeight = ctx.canvas.height;
-
-                var imageDims = [image.width, image.height],
-                    imageRatio = image.width / image.height,
+                var canvasDims = [0, 0];
+                if (scalemode === 'fit') {
+                    var results = fitCanvasDims(image.width, image.height);
+                    canvasDims = results.dims;
+                    var margins = results.margins;
+                    elCanvas.css({
+                        'margin-left': margins.left + 'px',
+                        'margin-top': margins.top + 'px'
+                    });
+                }
+                else {
+                    var imageDims = [image.width, image.height],
+                        imageRatio = image.width / image.height;
                     canvasDims = imageDims;
 
-                if (canvasDims[0] > maxCanvasDims[0]) {
-                    canvasDims[0] = maxCanvasDims[0];
-                    canvasDims[1] = canvasDims[0] / imageRatio;
-                } else if (canvasDims[0] < minCanvasDims[0]) {
-                    canvasDims[0] = minCanvasDims[0];
-                    canvasDims[1] = canvasDims[0] / imageRatio;
-                }
-                if (scalemode === 'fixed-height' && canvasDims[1] > maxCanvasDims[1]) {
-                    canvasDims[1] = maxCanvasDims[1];
-                    canvasDims[0] = canvasDims[1] * imageRatio;
-                } else if (canvasDims[1] < minCanvasDims[1]) {
-                    canvasDims[1] = minCanvasDims[1];
-                    canvasDims[0] = canvasDims[1] * imageRatio;
+                    if (canvasDims[0] > maxCanvasDims[0]) {
+                        canvasDims[0] = maxCanvasDims[0];
+                        canvasDims[1] = canvasDims[0] / imageRatio;
+                    } else if (canvasDims[0] < minCanvasDims[0]) {
+                        canvasDims[0] = minCanvasDims[0];
+                        canvasDims[1] = canvasDims[0] / imageRatio;
+                    }
+                    if (scalemode === 'fixed-height' && canvasDims[1] > maxCanvasDims[1]) {
+                        canvasDims[1] = maxCanvasDims[1];
+                        canvasDims[0] = canvasDims[1] * imageRatio;
+                    } else if (canvasDims[1] < minCanvasDims[1]) {
+                        canvasDims[1] = minCanvasDims[1];
+                        canvasDims[0] = canvasDims[1] * imageRatio;
+                    }
                 }
                 elCanvas.prop('width', canvasDims[0]).prop('height', canvasDims[1]);
 
@@ -490,8 +664,8 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
                     });
                 }
 
-                var ratioNewCurWidth = ctx.canvas.width / curWidth,
-                    ratioNewCurHeight = ctx.canvas.height / curHeight,
+                var ratioNewCurWidth = curWidth ? ctx.canvas.width / curWidth : 0,
+                    ratioNewCurHeight = curHeight ? ctx.canvas.height / curHeight : 0,
                     ratioMin = Math.min(ratioNewCurWidth, ratioNewCurHeight);
 
                 //TODO: use top left corner point
@@ -837,6 +1011,10 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
         elCanvas.on('touchstart', onMouseDown);
         $document.on('touchend', onMouseUp);
 
+        elCanvas.prop('tabindex', '0');
+
+        elCanvas.on('keydown', onKeyDown);
+
         // CropHost Destructor
         this.destroy = function () {
             $document.off('mousemove', onMouseMove);
@@ -846,6 +1024,8 @@ angular.module('uiCropper').factory('cropHost', ['$document', '$q', 'cropAreaCir
             $document.off('touchmove', onMouseMove);
             elCanvas.off('touchstart', onMouseDown);
             $document.off('touchend', onMouseUp);
+
+            elCanvas.off('keydown', onKeyDown);
 
             elCanvas.remove();
         };

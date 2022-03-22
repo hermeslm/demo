@@ -24,12 +24,12 @@
     "test",
     "tests"
   ],
-  "version": "2.1.2",
-  "_release": "2.1.2",
+  "version": "2.1.3",
+  "_release": "2.1.3",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.2",
-    "commit": "00417d99a008fd5ee581a71c0daa676c8148ab3e"
+    "tag": "v2.1.3",
+    "commit": "600b91aa89a0bc09d7e33bd4ee4586ff4d7e0a19"
   },
   "_source": "https://github.com/brinley/jSignature.git",
   "_target": "*",

@@ -56,12 +56,12 @@
   "dependencies": {
     "angular": ">=1.4.0"
   },
-  "version": "1.0.6",
-  "_release": "1.0.6",
+  "version": "1.0.9",
+  "_release": "1.0.9",
   "_resolution": {
     "type": "version",
-    "tag": "v1.0.6",
-    "commit": "cfaa2eff086f5d07daaa096605327d276844da6a"
+    "tag": "1.0.9",
+    "commit": "78a6c264f67d6df74a657fb1a61a6c8fe7e037e5"
   },
   "_source": "https://github.com/CrackerakiUA/ui-cropper.git",
   "_target": "^1.0.6",

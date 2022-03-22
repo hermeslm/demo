@@ -16,8 +16,11 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
             canvasScalemode: '@?', /* String. If set to 'full-width' the directive uses all width available */
             /* and the canvas expands in height as much as it need to maintain the aspect ratio */
             /* if set to 'fixed-height', the directive is restricted by a parent element in height */
+            /* set to 'fit' to fit image into ui-cropper container */
 
             changeOnFly: '=?',
+            disableKeyboardAccess: '=?',
+            allowPropagation: '=?',
             liveView: '=?',
             initMaxArea: '=?',
             areaCoords: '=?',
@@ -42,6 +45,7 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
             dominantColor: '=?',
             paletteColor: '=?',
             paletteColorLength: '=?',
+            disableCrop: '=?',
 
             onChange: '&',
             onLoadBegin: '&',
@@ -57,7 +61,10 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
             var events = scope.events;
 
             // Init Crop Host
-            var cropHost = new CropHost(element.find('canvas'), {}, events);
+            var cropHost = new CropHost(element.find('canvas'), {
+                disableKeyboardAccess: scope.disableKeyboardAccess,
+                allowPropagation: scope.allowPropagation
+            }, events);
 
             if (scope.canvasScalemode) {
                 cropHost.setScalemode(scope.canvasScalemode);
@@ -97,7 +104,7 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
                         }
                         cropHost.getResultImageDataBlob().then(function (blob) {
                             scope.resultBlob = blob;
-                            scope.urlBlob = urlCreator.createObjectURL(blob);
+                            scope.urlBlob = blob ? urlCreator.createObjectURL(blob) : null;
                         });
 
                         if (scope.resultImage) {
@@ -182,7 +189,7 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
                     case 'de':
                     case 'de-DE':
                         return 'Laden';
-                        
+
                     case 'pt':
                     case 'pt-BR':
                         return 'Carregando';
@@ -234,6 +241,12 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
 
             // Sync CropHost with Directive's options
             scope.$watch('image', function (newVal) {
+                // reset the original size and position to 0
+                // it's mandatory because if not reset the size of the crop area won't maximise when the image was replaced
+                var area = cropHost.getArea();
+                if (area) {
+                    cropHost.getArea()._size = { x: 0, y: 0, w: 0, h: 0 };
+                }
                 if (newVal) {
                     displayLoading();
                 }
@@ -293,7 +306,7 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
             });
             scope.$watch('aspectRatio', function () {
                 if (typeof scope.aspectRatio === 'string' && scope.aspectRatio !== '') {
-                    scope.aspectRatio = parseInt(scope.aspectRatio);
+                    scope.aspectRatio = parseFloat(scope.aspectRatio);
                 }
                 if (scope.aspectRatio) {
                     cropHost.setAspect(scope.aspectRatio);
@@ -305,9 +318,16 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
                 }
             });
 
+            scope.$watch('disableCrop', function () {
+                cropHost.setDisableCrop(scope.disableCrop);
+            });
+
             // Update CropHost dimensions when the directive element is resized
             scope.$watch(
                 function () {
+                    if (cropHost.getScalemode() === 'fit') {
+                        return [element[0].clientWidth, element[0].clientHeight];
+                    }
                     if (cropHost.getScalemode() === 'fixed-height') {
                         return [element[0].clientWidth, element[0].clientHeight];
                     }
@@ -317,6 +337,10 @@ angular.module('uiCropper').directive('uiCropper', ['$timeout', 'cropHost', 'cro
                 },
                 function (value) {
 
+                    if (cropHost.getScalemode() === 'fit') {
+                        cropHost.setMaxDimensions(value[0], value[1]);
+                        updateResultImage(scope);
+                    }
                     if (cropHost.getScalemode() === 'fixed-height') {
                         if (value[0] > 0 && value[1] > 0) {
                             cropHost.setMaxDimensions(value[0], value[1]);
